@@ -14,7 +14,7 @@
 <meta property="og:description" content="解析器模块位于 org.apache.ibatis.parsing，主要功能是解析 XML 和 Property。 XML 解析器相关单元测试可以查看 org.apache.ibatis.parsing.XPathParserTest。 XPathParser对 XPath 进行简单封装。XPath 使用查看参考2。 XMLMapperEntityResolver加载本地的 dtd 文件。 变量占">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2020-07-18T16:53:00.000Z">
-<meta property="article:modified_time" content="2020-07-18T16:56:40.300Z">
+<meta property="article:modified_time" content="2020-07-18T17:06:34.941Z">
 <meta property="article:author" content="SKP">
 <meta property="article:tag" content="MyBatis">
 <meta property="article:tag" content="MyBatis 源码">
@@ -80,6 +80,8 @@
     <br/>
     <span id="actions">
       <ul>
+        
+        <li><a class="icon" href="/2020/07/22/%E3%80%90Mybatis-%E6%BA%90%E7%A0%81%E3%80%91%E5%8F%8D%E5%B0%84%E6%A8%A1%E5%9D%97/"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
         
         
         <li><a class="icon" href="/2020/07/18/%E3%80%90Mybatis-%E6%BA%90%E7%A0%81%E3%80%91%E9%A1%B9%E7%9B%AE%E7%BB%93%E6%9E%84%E5%8F%8A%E5%AD%A6%E4%B9%A0%E8%BF%9B%E5%BA%A6/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
@@ -165,7 +167,7 @@
 <h3 id="XMLMapperEntityResolver"><a href="#XMLMapperEntityResolver" class="headerlink" title="XMLMapperEntityResolver"></a>XMLMapperEntityResolver</h3><p>加载本地的 dtd 文件。</p>
 <h2 id="变量占位符解析器"><a href="#变量占位符解析器" class="headerlink" title="变量占位符解析器"></a>变量占位符解析器</h2><p>相关单元测试可以查看 <code>org.apache.ibatis.parsing.PropertyParserTest</code>。</p>
 <h3 id="TokenHandler"><a href="#TokenHandler" class="headerlink" title="TokenHandler"></a>TokenHandler</h3><p>占位符处理器接口，有四个实现类，<code>VariableTokenHandler</code>、<code>BindingTokenParser</code>、<code>DynamicCheckerTokenParser</code>、<code>ParameterMappingTokenHandler</code>，其中 <code>VariableTokenHandler</code> 为解析器模块的实现类，本文也是以 <code>VariableTokenHandler</code> 为例。</p>
-<h3 id="PropertyParser"><a href="#PropertyParser" class="headerlink" title="PropertyParser"></a>PropertyParser</h3><p><code>${}</code> 解析工具类，不可实例化。</p>
+<h3 id="PropertyParser"><a href="#PropertyParser" class="headerlink" title="PropertyParser"></a>PropertyParser</h3><p><code>${}</code> 解析工具类，不可实例化。模板参数的解析可以参考该类的写法，例如短信模板。</p>
 <p>两个属性：</p>
 <ul>
 <li>org.apache.ibatis.parsing.PropertyParser.enable-default-value 如果占位符匹配不到值，是否启用默认值，默认 false。</li>
