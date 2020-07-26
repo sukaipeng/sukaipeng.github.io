@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  
+  
+  
+  <entry>
+    <title>Redis 概述</title>
+    <link href="/2020/07/26/Redis-%E6%A6%82%E8%BF%B0/"/>
+    <url>/2020/07/26/Redis-%E6%A6%82%E8%BF%B0/</url>
+    
+    <content type="html"><![CDATA[<h2 id="Redis-为什么这么快？"><a href="#Redis-为什么这么快？" class="headerlink" title="Redis 为什么这么快？"></a>Redis 为什么这么快？</h2><ul><li>基于内存，绝大部分请求是内存操作。</li><li>数据结构和操作简单。</li><li>Redis 是单线程模型，避免了并发和线程上下文切换的开销。但对于一些比较重的任务，例如生成 RDB 文件，fork 子进程来处理。一般来说，制约 Redis 性能的不是 CPU，而是网络 IO。</li><li>Redis 采用了 IO 多路复用模型，底层封装 select、epoll 等 IO 多路复用函数库，针对不同操作系统采用了不同的实现，如 Linux 采用 epoll。监听文件描述符可读可写的工作交给了 epoll 函数，程序就可以继续执行，而不会阻塞</li></ul><blockquote><p>Redis 基于 Reactor 模式开发了网络事件处理器，这个处理器被称为文件事件处理器。它的组成结构为四部分：多个套接字、IO 多路复用程序、文件事件分派器、事件处理器。因为文件事件分派器队列的消费是单线程的，所以 Redis 才叫单线程模型。</p></blockquote><blockquote><p>文件描述符（File Descriptor）<br>一个打开的文件通过唯一的描述符进行应用，该描述符是打开文件的元数据到文件本身的映射。</p></blockquote><h2 id="常用数据类型"><a href="#常用数据类型" class="headerlink" title="常用数据类型"></a>常用数据类型</h2><table><thead><tr><th>数据类型</th><th>特点</th><th>常用指令</th></tr></thead><tbody><tr><td>String</td><td>最大可以存 512M。二进制安全，可以存储任何数据，包括 JPG、序列化的对象等</td><td>set get incr</td></tr><tr><td>Hash</td><td></td><td>hmset hget</td></tr><tr><td>List</td><td>按插入顺序排序</td><td>lpush lrange</td></tr><tr><td>Set</td><td>无序。存储关注人、粉丝</td><td>sadd smembers</td></tr><tr><td>Sorted Set</td><td>通过分数进行排序</td><td>zadd zrangebyscore</td></tr></tbody></table><h2 id="查询固定前缀的-Key"><a href="#查询固定前缀的-Key" class="headerlink" title="查询固定前缀的 Key"></a>查询固定前缀的 Key</h2><table><thead><tr><th>数据类型</th><th>特点</th></tr></thead><tbody><tr><td>keys k1*</td><td>阻塞</td></tr><tr><td>scan 游标位置 match k1* count 10</td><td>基于游标的迭代器。游标不一定是递增，但是不为 0 就代表还没遍历结束。支持模糊查询。返回的数据条数不一定和指定的条数一样。可能返回重复的元素。</td></tr></tbody></table><h2 id="分布式锁"><a href="#分布式锁" class="headerlink" title="分布式锁"></a>分布式锁</h2><p>实现分布式锁的关键：</p><ul><li>互斥性 - 有一个客户端能获取锁</li><li>安全性 - 获取锁的客户端才能释放锁</li><li>死锁 - 设置过期时间</li><li>容错</li></ul><p>原理：</p><ol><li>setnx key value 和 expire key seconds 两个指令。</li><li>set key value ex 过期秒数 nx/xx（Redis 4.0 后提供的新功能）。</li></ol><h2 id="异步队列"><a href="#异步队列" class="headerlink" title="异步队列"></a>异步队列</h2><p>生产者和消费者一对一：</p><ul><li>使用 List 数据类型充当消息队列。</li><li>rpush 指令生成消息，lpop/blpop 消费消息。</li></ul><p>生产者和消费者一对多：</p><ul><li>pub/sub 发布订阅者模式</li><li>订阅：subscribe myTopic，无状态，不保证可达。</li><li>发布：publish myTopic “hello”。</li></ul><h2 id="RDB-持久化"><a href="#RDB-持久化" class="headerlink" title="RDB 持久化"></a>RDB 持久化</h2><ul><li><p>redis.conf 相关参数</p><ul><li>save</li><li>stop-writes-on-bgsave-error</li><li>rdbcompression</li></ul></li><li><p>触发方式</p><ul><li><p>手动</p><ul><li>save - 阻塞 redis 的服务器进程，直到 rdb 文件创建完毕。</li><li>bgsave - fork 一个子进程来创建 rdb 文件，不阻塞服务器进程。</li></ul></li><li><p>自动</p><ul><li>redis.conf 中 save 配置（采用 bgsave 方式）。</li><li>主从复制时，主节点自动触发。</li><li>执行 Debug Reload。</li><li>执行 shutdown 且没有开启 AOF 持久化。</li></ul></li></ul></li><li><p>bgsave 原理</p><ul><li>fork 子进程和 Copy-on-Write。如果没有更新请求，主进程和子进程共享同一份内存数据。子进程创建 RDB 过程中，如果有更新请求，主进程复制出一份需要更新的数据页的副本并在副本上进行修改。等子进程创建完 RDB 文件后，再用副本替换共享内存数据。</li></ul></li></ul><h2 id="AOF-持久化"><a href="#AOF-持久化" class="headerlink" title="AOF 持久化"></a>AOF 持久化</h2><ul><li>redis.conf 相关参数<ul><li>appendonly</li><li>appendfilename</li><li>appendfsync</li></ul></li><li>记录除查询以外的变更数据库状态的指令。</li><li>增量追加</li></ul><pre><code class="hljs vim">TODO 待整理AOF持久化 <span class="hljs-keyword">append</span>-<span class="hljs-keyword">only</span>-<span class="hljs-keyword">file</span>记录除查询以外的变更数据库状态的指令增量追加AOFredis.<span class="hljs-keyword">conf</span> appendonly appendfilename appendfsync日志重写解决AOF文件不断变大 手动bgrewriteaof 自动。。。fork子进程，新AOF文件写到临时文件，不依赖原来的AOF文件。主进程将新的变更同时写入到内存和原来的AOF文件。主进程获取到子进程重写AOF文件的完成信号，往新AOF文件同步增量变动。用新的AOF文件替换旧的AOF文件redis数据恢复，重启redis即可。优先AOF恢复，没有则用RDB恢复RDB全量数据快照，文件小，恢复快无法保存最近一次快照之后的数据AOF可读性高，适合保存增量数据，数据不易丢失文件大，恢复慢RDB-AOF混合持久化pipeline主从同步pipeline和linux的管道类似redis基于请求/响应模型，单个请求处理需要一一应答pipeline批量执行指令，节省多次IO往返指令如果有依赖关系，需要分批同步pipeline执行主从同步原理 （主从、哨兵、集群）全同步增量同步redis哨兵流言协议gossip<span class="hljs-keyword">redi</span>集群 无中心一致性哈希算法 环形 对<span class="hljs-number">2</span>^<span class="hljs-number">32</span>取模 保存在顺时针第一台服务器上虚拟节点解决数据倾斜redis 启动时检测到 RDB 文件，会自动载入缺点数量大，全内存的数据 IO 会影响性能创建快照时刻到当前时间的更新是没有保存的</code></pre><hr><p>参考：</p><ol><li><a href="https://coding.imooc.com/class/303.html#Anchor" target="_blank" rel="noopener">剑指 Java 面试-Offer 直通车</a></li><li><a href="https://juejin.im/post/5dabdb1ee51d45216d7b166a" target="_blank" rel="noopener">彻底搞懂 Redis 的线程模型</a></li></ol>]]></content>
+    
+    
+    <categories>
+      
+      <category>Redis</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>Redis</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>【Mybatis 源码】反射模块</title>
+    <link href="/2020/07/22/%E3%80%90Mybatis-%E6%BA%90%E7%A0%81%E3%80%91%E5%8F%8D%E5%B0%84%E6%A8%A1%E5%9D%97/"/>
+    <url>/2020/07/22/%E3%80%90Mybatis-%E6%BA%90%E7%A0%81%E3%80%91%E5%8F%8D%E5%B0%84%E6%A8%A1%E5%9D%97/</url>
+    
+    <content type="html"><![CDATA[<p>基于 JAVA 的反射进行封装。未完全弄懂，待续。。。</p><hr><p>参考：</p><ol><li><a href="http://svip.iocoder.cn/MyBatis/reflection-package/" target="_blank" rel="noopener">【芋道源码】精尽 MyBatis 源码分析 —— 反射模块</a></li></ol>]]></content>
+    
+    
+    <categories>
+      
+      <category>MyBatis</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>MyBatis</tag>
+      
+      <tag>MyBatis 源码</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>【Mybatis 源码】解析器模块</title>
+    <link href="/2020/07/19/%E3%80%90Mybatis-%E6%BA%90%E7%A0%81%E3%80%91%E8%A7%A3%E6%9E%90%E5%99%A8%E6%A8%A1%E5%9D%97/"/>
+    <url>/2020/07/19/%E3%80%90Mybatis-%E6%BA%90%E7%A0%81%E3%80%91%E8%A7%A3%E6%9E%90%E5%99%A8%E6%A8%A1%E5%9D%97/</url>
+    
+    <content type="html"><![CDATA[<p>解析器模块位于 <code>org.apache.ibatis.parsing</code>，主要功能是解析 XML 和 Property。</p><h2 id="XML-解析器"><a href="#XML-解析器" class="headerlink" title="XML 解析器"></a>XML 解析器</h2><p>相关单元测试可以查看 <code>org.apache.ibatis.parsing.XPathParserTest</code>。</p><h3 id="XPathParser"><a href="#XPathParser" class="headerlink" title="XPathParser"></a>XPathParser</h3><p>对 XPath 进行简单封装。XPath 使用查看参考2。</p><h3 id="XMLMapperEntityResolver"><a href="#XMLMapperEntityResolver" class="headerlink" title="XMLMapperEntityResolver"></a>XMLMapperEntityResolver</h3><p>加载本地的 dtd 文件。</p><h2 id="变量占位符解析器"><a href="#变量占位符解析器" class="headerlink" title="变量占位符解析器"></a>变量占位符解析器</h2><p>相关单元测试可以查看 <code>org.apache.ibatis.parsing.PropertyParserTest</code>。</p><h3 id="TokenHandler"><a href="#TokenHandler" class="headerlink" title="TokenHandler"></a>TokenHandler</h3><p>占位符处理器接口，有四个实现类，<code>VariableTokenHandler</code>、<code>BindingTokenParser</code>、<code>DynamicCheckerTokenParser</code>、<code>ParameterMappingTokenHandler</code>，其中 <code>VariableTokenHandler</code> 为解析器模块的实现类，本文也是以 <code>VariableTokenHandler</code> 为例。</p><h3 id="PropertyParser"><a href="#PropertyParser" class="headerlink" title="PropertyParser"></a>PropertyParser</h3><p><code>${}</code> 解析工具类，不可实例化。模板参数的解析可以参考该类的写法，例如短信模板。</p><p>两个属性：</p><ul><li>org.apache.ibatis.parsing.PropertyParser.enable-default-value 如果占位符匹配不到值，是否启用默认值，默认 false。</li><li>org.apache.ibatis.parsing.PropertyParser.default-value-separator 如果启用上述选项，值和默认值用什么符号分隔开，默认是“:”。示例：${key:aaaa}</li></ul><p>查看单元测试类 <code>PropertyParserTest</code>，可以得知 <code>PropertyParser#parse(String string, Properties variables)</code> 为入口，其代码如下：</p><pre><code class="hljs java"><span class="hljs-comment">// string 包含占位符的文本。</span><span class="hljs-comment">// variables 继承自 HashTable，是一个 Map。</span><span class="hljs-comment">// 返回替换完占位符后的文本</span><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> String <span class="hljs-title">parse</span><span class="hljs-params">(String string, Properties variables)</span> </span>&#123;  <span class="hljs-comment">// 初始化变量占位符处理器，其处理的占位符主要是 $&#123;key&#125;。</span>  VariableTokenHandler handler = <span class="hljs-keyword">new</span> VariableTokenHandler(variables);  <span class="hljs-comment">// 通用的占位符解析器。</span>  <span class="hljs-comment">// 主要作用是，找出占位符文本，交给 handler 替换成指定的值。</span>  GenericTokenParser parser = <span class="hljs-keyword">new</span> GenericTokenParser(<span class="hljs-string">"$&#123;"</span>, <span class="hljs-string">"&#125;"</span>, handler);  <span class="hljs-keyword">return</span> parser.parse(string);&#125;</code></pre><h3 id="GenericTokenParser"><a href="#GenericTokenParser" class="headerlink" title="GenericTokenParser"></a>GenericTokenParser</h3><p>通用的占位符解析器，依次找出文本中的所有占位符，并调用 <code>TokenHandler</code> 替换占位符。</p><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">GenericTokenParser</span> </span>&#123;  <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> String openToken;  <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> String closeToken;  <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> TokenHandler handler;  <span class="hljs-comment">// 初始化解析器，传入占位符号的开头和结尾，占位符处理器。</span>  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">GenericTokenParser</span><span class="hljs-params">(String openToken, String closeToken, TokenHandler handler)</span> </span>&#123;    <span class="hljs-keyword">this</span>.openToken = openToken;    <span class="hljs-keyword">this</span>.closeToken = closeToken;    <span class="hljs-keyword">this</span>.handler = handler;  &#125;  <span class="hljs-comment">// 核心解析代码</span>  <span class="hljs-function"><span class="hljs-keyword">public</span> String <span class="hljs-title">parse</span><span class="hljs-params">(String text)</span> </span>&#123;    <span class="hljs-keyword">if</span> (text == <span class="hljs-keyword">null</span> || text.isEmpty()) &#123;      <span class="hljs-keyword">return</span> <span class="hljs-string">""</span>;    &#125;    <span class="hljs-comment">// 寻找占位符开头</span>    <span class="hljs-comment">// search open token</span>    <span class="hljs-keyword">int</span> start = text.indexOf(openToken);    <span class="hljs-keyword">if</span> (start == -<span class="hljs-number">1</span>) &#123;      <span class="hljs-comment">// 不存在占位符号</span>      <span class="hljs-keyword">return</span> text;    &#125;    <span class="hljs-keyword">char</span>[] src = text.toCharArray();    <span class="hljs-keyword">int</span> offset = <span class="hljs-number">0</span>;    <span class="hljs-keyword">final</span> StringBuilder builder = <span class="hljs-keyword">new</span> StringBuilder();    StringBuilder expression = <span class="hljs-keyword">null</span>;    <span class="hljs-keyword">while</span> (start &gt; -<span class="hljs-number">1</span>) &#123;      <span class="hljs-keyword">if</span> (start &gt; <span class="hljs-number">0</span> &amp;&amp; src[start - <span class="hljs-number">1</span>] == <span class="hljs-string">'\\'</span>) &#123;        <span class="hljs-comment">// this open token is escaped. remove the backslash and continue.</span>        builder.append(src, offset, start - offset - <span class="hljs-number">1</span>).append(openToken);        offset = start + openToken.length();      &#125; <span class="hljs-keyword">else</span> &#123;        <span class="hljs-comment">// found open token. let's search close token.</span>        <span class="hljs-keyword">if</span> (expression == <span class="hljs-keyword">null</span>) &#123;          expression = <span class="hljs-keyword">new</span> StringBuilder();        &#125; <span class="hljs-keyword">else</span> &#123;          expression.setLength(<span class="hljs-number">0</span>);        &#125;        builder.append(src, offset, start - offset);        offset = start + openToken.length();        <span class="hljs-keyword">int</span> end = text.indexOf(closeToken, offset);        <span class="hljs-comment">// 寻找占位符结尾</span>        <span class="hljs-keyword">while</span> (end &gt; -<span class="hljs-number">1</span>) &#123;          <span class="hljs-keyword">if</span> (end &gt; offset &amp;&amp; src[end - <span class="hljs-number">1</span>] == <span class="hljs-string">'\\'</span>) &#123;            <span class="hljs-comment">// this close token is escaped. remove the backslash and continue.</span>            expression.append(src, offset, end - offset - <span class="hljs-number">1</span>).append(closeToken);            offset = end + closeToken.length();            end = text.indexOf(closeToken, offset);          &#125; <span class="hljs-keyword">else</span> &#123;            expression.append(src, offset, end - offset);            <span class="hljs-keyword">break</span>;          &#125;        &#125;        <span class="hljs-keyword">if</span> (end == -<span class="hljs-number">1</span>) &#123;          <span class="hljs-comment">// close token was not found.</span>          builder.append(src, start, src.length - start);          offset = src.length;        &#125; <span class="hljs-keyword">else</span> &#123;          <span class="hljs-comment">// 调用占位符处理器替换文本，占位符处理器替换代码在下面 VariableTokenHandler</span>          builder.append(handler.handleToken(expression.toString()));          offset = end + closeToken.length();        &#125;      &#125;      <span class="hljs-comment">// 寻找下一个占位符开头</span>      start = text.indexOf(openToken, offset);    &#125;    <span class="hljs-keyword">if</span> (offset &lt; src.length) &#123;      builder.append(src, offset, src.length - offset);    &#125;    <span class="hljs-keyword">return</span> builder.toString();  &#125;&#125;</code></pre><h3 id="VariableTokenHandler"><a href="#VariableTokenHandler" class="headerlink" title="VariableTokenHandler"></a>VariableTokenHandler</h3><p><code>VariableTokenHandler</code> 为 <code>PropertyParser</code> 的静态内部类，其实现了 <code>TokenHandler</code> 接口，用于替换 <code>${}</code> 包含的占位符。关键代码如下：</p><pre><code class="hljs java"><span class="hljs-comment">// content 占位符文本。如占位符为 $&#123;key&#125;，那么 content 为 key</span><span class="hljs-meta">@Override</span><span class="hljs-function"><span class="hljs-keyword">public</span> String <span class="hljs-title">handleToken</span><span class="hljs-params">(String content)</span> </span>&#123;  <span class="hljs-keyword">if</span> (variables != <span class="hljs-keyword">null</span>) &#123;    String key = content;    <span class="hljs-comment">// 是否使用默认值，由 org.apache.ibatis.parsing.PropertyParser.enable-default-value 控制。</span>    <span class="hljs-keyword">if</span> (enableDefaultValue) &#123;      <span class="hljs-comment">// 分隔符，默认“:”，由 org.apache.ibatis.parsing.PropertyParser.default-value-separator 控制。</span>      <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> separatorIndex = content.indexOf(defaultValueSeparator);      String defaultValue = <span class="hljs-keyword">null</span>;      <span class="hljs-keyword">if</span> (separatorIndex &gt;= <span class="hljs-number">0</span>) &#123;        key = content.substring(<span class="hljs-number">0</span>, separatorIndex);        defaultValue = content.substring(separatorIndex + defaultValueSeparator.length());      &#125;      <span class="hljs-keyword">if</span> (defaultValue != <span class="hljs-keyword">null</span>) &#123;        <span class="hljs-keyword">return</span> variables.getProperty(key, defaultValue);      &#125;    &#125;    <span class="hljs-keyword">if</span> (variables.containsKey(key)) &#123;      <span class="hljs-keyword">return</span> variables.getProperty(key);    &#125;  &#125;  <span class="hljs-comment">// 匹配不到值，也没有默认值，则返回原值 $&#123;key&#125;</span>  <span class="hljs-keyword">return</span> <span class="hljs-string">"$&#123;"</span> + content + <span class="hljs-string">"&#125;"</span>;&#125;</code></pre><hr><p>参考：</p><ol><li><a href="http://svip.iocoder.cn/MyBatis/parsing-package/" target="_blank" rel="noopener">【芋道源码】精尽 MyBatis 源码分析 —— 解析器模块</a></li><li><a href="https://www.yiibai.com/java_xml/java_xpath_parse_document.html" target="_blank" rel="noopener">Java XPath解析器 - 解析XML文档</a></li></ol>]]></content>
+    
+    
+    <categories>
+      
+      <category>MyBatis</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>MyBatis</tag>
+      
+      <tag>MyBatis 源码</tag>
+      
+      <tag>XPath</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>【Mybatis 源码】项目结构及学习进度</title>
+    <link href="/2020/07/18/%E3%80%90Mybatis-%E6%BA%90%E7%A0%81%E3%80%91%E9%A1%B9%E7%9B%AE%E7%BB%93%E6%9E%84%E5%8F%8A%E5%AD%A6%E4%B9%A0%E8%BF%9B%E5%BA%A6/"/>
+    <url>/2020/07/18/%E3%80%90Mybatis-%E6%BA%90%E7%A0%81%E3%80%91%E9%A1%B9%E7%9B%AE%E7%BB%93%E6%9E%84%E5%8F%8A%E5%AD%A6%E4%B9%A0%E8%BF%9B%E5%BA%A6/</url>
+    
+    <content type="html"><![CDATA[<p>MyBatis 版本：3.5.6</p><table><thead><tr><th>分层</th><th>模块</th><th>定义</th><th>已完成</th></tr></thead><tbody><tr><td>基础支持层</td><td>parsing</td><td>XML 解析器和占位符解析器</td><td>是</td></tr><tr><td>基础支持层</td><td>reflection</td><td>反射封装</td><td>否</td></tr></tbody></table><hr><p>链接收藏：</p><ol><li><a href="http://svip.iocoder.cn/categories/MyBatis/" target="_blank" rel="noopener">【芋道源码】精尽 MyBatis 源码分析</a></li><li><a href="https://my.oschina.net/zudajun?tab=newest&catalogId=3532897" target="_blank" rel="noopener">Mybatis3.4.x技术内幕</a></li></ol>]]></content>
+    
+    
+    <categories>
+      
+      <category>MyBatis</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>MyBatis</tag>
+      
+      <tag>MyBatis 源码</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>Redis 分布式锁超时问题</title>
+    <link href="/2020/07/10/Redis-%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81%E8%B6%85%E6%97%B6%E9%97%AE%E9%A2%98/"/>
+    <url>/2020/07/10/Redis-%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81%E8%B6%85%E6%97%B6%E9%97%AE%E9%A2%98/</url>
+    
+    <content type="html"><![CDATA[<p>以下内容只针对单机部署的 Redis。</p><h2 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h2><h3 id="指令"><a href="#指令" class="headerlink" title="指令"></a>指令</h3><ul><li>加锁：SETNX key value</li><li>超时：EXPIRE key timeout</li><li>解锁：DEL key</li></ul><h3 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h3><ol><li>互斥性。</li><li>不会发生死锁。设置过期时间。</li><li>针对同一把锁，加锁和解锁必须由【同一个请求】完成。SETNX 时，value 可设置请求的唯一 ID，解锁时，校验 ID 是否一致。</li><li>Redis 操作原子性。如，加锁 SETNX 和 EXPIRE 原子性、解锁 GET 和 DEL 原子性。</li><li>是否需要考虑分布式锁的可重入性。<ol><li><code>ThreadLocal</code></li><li>利用 Redis 的 Map，存储分布式锁 key 和重入次数，lua 脚本实现操作的原子性。</li></ol></li><li>多线程获取分布式锁的阻塞方式。<ol><li><code>Thread.sleep()</code> 配合客户端轮询获取分布式锁。</li><li>使用 Redis 的发布订阅功能。当获取锁失败时，订阅锁释放消息，获取锁成功后释放时，发送锁释放消息。</li></ol></li><li>超时问题。</li></ol><h2 id="超时问题"><a href="#超时问题" class="headerlink" title="超时问题"></a>超时问题</h2><p>如果线程 A 成功获取锁并设置过期时间 30 秒，但线程 A 执行时间超过了 30 秒，锁过期自动释放，此时线程 B 获取到了锁，线程 A 和线程 B 并发执行。</p><h3 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h3><h4 id="方案一"><a href="#方案一" class="headerlink" title="方案一"></a>方案一</h4><p>通过守护线程，延长锁的过期时间。</p><ul><li><p>守护线程</p><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">SurvivalClamProcessor</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">Runnable</span> </span>&#123;     <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> REDIS_EXPIRE_SUCCESS = <span class="hljs-number">1</span>;    <span class="hljs-keyword">private</span> String field;    <span class="hljs-keyword">private</span> String key;    <span class="hljs-keyword">private</span> String value;    <span class="hljs-keyword">private</span> <span class="hljs-keyword">int</span> lockTime;    <span class="hljs-comment">//线程关闭的标记</span>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">volatile</span> Boolean signal;    SurvivalClamProcessor(String field, String key, String value, <span class="hljs-keyword">int</span> lockTime) &#123;        <span class="hljs-keyword">this</span>.field = field;        <span class="hljs-keyword">this</span>.key = key;        <span class="hljs-keyword">this</span>.value = value;        <span class="hljs-keyword">this</span>.lockTime = lockTime;        <span class="hljs-keyword">this</span>.signal = Boolean.TRUE;    &#125;    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">stop</span><span class="hljs-params">()</span> </span>&#123;        <span class="hljs-keyword">this</span>.signal = Boolean.FALSE;    &#125;     <span class="hljs-meta">@Override</span>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">run</span><span class="hljs-params">()</span> </span>&#123;        <span class="hljs-keyword">int</span> waitTime = lockTime * <span class="hljs-number">1000</span> * <span class="hljs-number">2</span> / <span class="hljs-number">3</span>;        <span class="hljs-keyword">while</span> (signal) &#123;            <span class="hljs-keyword">try</span> &#123;                Thread.sleep(waitTime);                <span class="hljs-keyword">if</span> (expandLockTime(field, key, value, lockTime) != REDIS_EXPIRE_SUCCESS) &#123;                    <span class="hljs-comment">// 延长锁失败。业务已经处理完成，或 Redis 丢失了锁</span>                    <span class="hljs-keyword">this</span>.stop();                &#125;            &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;                <span class="hljs-comment">// 处理线程被强制中断</span>            &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;                <span class="hljs-comment">// 异常</span>            &#125;        &#125;    &#125;&#125;</code></pre></li><li><p>延长锁的过期时间</p><pre><code class="hljs lua"><span class="hljs-keyword">if</span> redis.call(<span class="hljs-string">'get'</span>, KEYS[<span class="hljs-number">1</span>]) == ARGV[<span class="hljs-number">1</span>] <span class="hljs-keyword">then</span>   <span class="hljs-keyword">return</span> redis.call(<span class="hljs-string">'expire'</span>, KEYS[<span class="hljs-number">1</span>],ARGV[<span class="hljs-number">2</span>])<span class="hljs-keyword">else</span>   <span class="hljs-keyword">return</span> <span class="hljs-string">'0'</span> <span class="hljs-keyword">end</span>;</code></pre></li><li><p>守护线程启动</p><pre><code class="hljs java">SurvivalClamProcessor survivalClamProcessor = <span class="hljs-keyword">new</span> SurvivalClamProcessor(lockField, lockKey, randomValue, lockTime);Thread survivalThread = <span class="hljs-keyword">new</span> Thread(survivalClamProcessor);survivalThread.setDaemon(Boolean.TRUE);survivalThread.start();Object returnObject = joinPoint.proceed(args);survivalClamProcessor.stop();survivalThread.interrupt();<span class="hljs-keyword">return</span> returnObject;</code></pre></li></ul><h4 id="方案二（存疑）"><a href="#方案二（存疑）" class="headerlink" title="方案二（存疑）"></a>方案二（存疑）</h4><p>解锁时，发现锁不存在或不是当前请求的锁，进行回滚操作。</p><ol><li>线程 A 获取分布式锁 key - val1，业务未处理完成，锁过期了。</li><li>期间，线程 B 获取分布式锁 key - val2，进行业务处理。</li><li>线程 A 处理完成，释放锁时，发现锁不是原来的锁，不是 val1 而是 val2。回滚线程 A 所做的操作。</li></ol><p>【疑问点】业务处理确实需要这么长时间，每一个请求都超时，业务无法进行下去。</p><hr><p>参考：</p><ol><li><a href="https://xiaomi-info.github.io/2019/12/17/redis-distributed-lock/" target="_blank" rel="noopener">分布式锁的实现之 redis 篇</a></li><li><a href="https://mp.weixin.qq.com/s/qJK61ew0kCExvXrqb7-RSg" target="_blank" rel="noopener">Redis 分布式锁的正确实现方式（ Java 版 ）</a></li><li><a href="https://blog.csdn.net/jaryle/article/details/102502884" target="_blank" rel="noopener">分布式锁超时问题的处理(只是参考，推荐使用redission框架和ZK做分布式锁)</a></li></ol>]]></content>
+    
+    
+    <categories>
+      
+      <category>Redis</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>Redis</tag>
+      
+      <tag>分布式锁</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>Hello World</title>
+    <link href="/2020/07/09/hello-world/"/>
+    <url>/2020/07/09/hello-world/</url>
+    
+    <content type="html"><![CDATA[<p>Welcome to <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/" target="_blank" rel="noopener">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html" target="_blank" rel="noopener">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="noopener">GitHub</a>.</p><h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><pre><code class="hljs bash">$ hexo new <span class="hljs-string">"My New Post"</span></code></pre><p>More info: <a href="https://hexo.io/docs/writing.html" target="_blank" rel="noopener">Writing</a></p><h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><pre><code class="hljs bash">$ hexo server</code></pre><p>More info: <a href="https://hexo.io/docs/server.html" target="_blank" rel="noopener">Server</a></p><h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><pre><code class="hljs bash">$ hexo generate</code></pre><p>More info: <a href="https://hexo.io/docs/generating.html" target="_blank" rel="noopener">Generating</a></p><h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><pre><code class="hljs bash">$ hexo deploy</code></pre><p>More info: <a href="https://hexo.io/docs/one-command-deployment.html" target="_blank" rel="noopener">Deployment</a></p>]]></content>
+    
+    
+    
+  </entry>
+  
+  
+  
+  
+</search>

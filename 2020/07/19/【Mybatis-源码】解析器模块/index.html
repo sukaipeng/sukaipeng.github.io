@@ -1,167 +1,198 @@
 <!DOCTYPE html>
-<html lang=en>
+<html lang="zh-CN">
+
+
+
+
+
 <head>
-    <!-- so meta -->
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="HandheldFriendly" content="True">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-    <meta name="description" content="解析器模块位于 org.apache.ibatis.parsing，主要功能是解析 XML 和 Property。 XML 解析器相关单元测试可以查看 org.apache.ibatis.parsing.XPathParserTest。 XPathParser对 XPath 进行简单封装。XPath 使用查看参考2。 XMLMapperEntityResolver加载本地的 dtd 文件。 变量占">
-<meta property="og:type" content="article">
-<meta property="og:title" content="【Mybatis 源码】解析器模块">
-<meta property="og:url" content="http://yoursite.com/2020/07/19/%E3%80%90Mybatis-%E6%BA%90%E7%A0%81%E3%80%91%E8%A7%A3%E6%9E%90%E5%99%A8%E6%A8%A1%E5%9D%97/index.html">
-<meta property="og:site_name" content="SKP 的博客">
-<meta property="og:description" content="解析器模块位于 org.apache.ibatis.parsing，主要功能是解析 XML 和 Property。 XML 解析器相关单元测试可以查看 org.apache.ibatis.parsing.XPathParserTest。 XPathParser对 XPath 进行简单封装。XPath 使用查看参考2。 XMLMapperEntityResolver加载本地的 dtd 文件。 变量占">
-<meta property="og:locale" content="en_US">
-<meta property="article:published_time" content="2020-07-18T16:53:00.000Z">
-<meta property="article:modified_time" content="2020-07-18T17:06:34.941Z">
-<meta property="article:author" content="SKP">
-<meta property="article:tag" content="MyBatis">
-<meta property="article:tag" content="MyBatis 源码">
-<meta property="article:tag" content="XPath">
-<meta name="twitter:card" content="summary">
-    
-    
-        
-          
-              <link rel="shortcut icon" href="/images/favicon.ico">
-          
-        
-        
-          
-            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
-          
-        
-        
-          
-            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
-          
-        
-    
-    <!-- title -->
-    <title>【Mybatis 源码】解析器模块</title>
-    <!-- styles -->
-    
-<link rel="stylesheet" href="/css/style.css">
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="">
+  <meta name="author" content="SKP">
+  <meta name="keywords" content="JAVA">
+  <title>【Mybatis 源码】解析器模块 - SKP 的博客</title>
 
-    <!-- persian styles -->
-    
-      
-<link rel="stylesheet" href="/css/rtl.css">
-
-    
-    <!-- rss -->
-    
-    
-<meta name="generator" content="Hexo 4.2.1"></head>
-
-<body class="max-width mx-auto px3 ltr">
-    
-      <div id="header-post">
-  <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
-  <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
-  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
-  <span id="menu">
-    <span id="nav">
-      <ul>
-         
-          <li><a href="/">Home</a></li>
-         
-          <li><a href="/archives/">Writing</a></li>
-         
-          <li><a href="/categories/">categories</a></li>
-         
-          <li><a href="/tags/">tags</a></li>
-         
-          <li><a href="/search/">Search</a></li>
-        
-      </ul>
-    </span>
-    <br/>
-    <span id="actions">
-      <ul>
-        
-        <li><a class="icon" href="/2020/07/22/%E3%80%90Mybatis-%E6%BA%90%E7%A0%81%E3%80%91%E5%8F%8D%E5%B0%84%E6%A8%A1%E5%9D%97/"><i class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
-        
-        
-        <li><a class="icon" href="/2020/07/18/%E3%80%90Mybatis-%E6%BA%90%E7%A0%81%E3%80%91%E9%A1%B9%E7%9B%AE%E7%BB%93%E6%9E%84%E5%8F%8A%E5%AD%A6%E4%B9%A0%E8%BF%9B%E5%BA%A6/"><i class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
-        
-        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
-        <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
-      </ul>
-      <span id="i-prev" class="info" style="display:none;">Previous post</span>
-      <span id="i-next" class="info" style="display:none;">Next post</span>
-      <span id="i-top" class="info" style="display:none;">Back to top</span>
-      <span id="i-share" class="info" style="display:none;">Share post</span>
-    </span>
-    <br/>
-    <div id="share" style="display: none">
-      <ul>
-  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://yoursite.com/2020/07/19/%E3%80%90Mybatis-%E6%BA%90%E7%A0%81%E3%80%91%E8%A7%A3%E6%9E%90%E5%99%A8%E6%A8%A1%E5%9D%97/" target="_blank" rel="noopener"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://twitter.com/share?url=http://yoursite.com/2020/07/19/%E3%80%90Mybatis-%E6%BA%90%E7%A0%81%E3%80%91%E8%A7%A3%E6%9E%90%E5%99%A8%E6%A8%A1%E5%9D%97/&text=【Mybatis 源码】解析器模块" target="_blank" rel="noopener"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://yoursite.com/2020/07/19/%E3%80%90Mybatis-%E6%BA%90%E7%A0%81%E3%80%91%E8%A7%A3%E6%9E%90%E5%99%A8%E6%A8%A1%E5%9D%97/&title=【Mybatis 源码】解析器模块" target="_blank" rel="noopener"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://yoursite.com/2020/07/19/%E3%80%90Mybatis-%E6%BA%90%E7%A0%81%E3%80%91%E8%A7%A3%E6%9E%90%E5%99%A8%E6%A8%A1%E5%9D%97/&is_video=false&description=【Mybatis 源码】解析器模块" target="_blank" rel="noopener"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=【Mybatis 源码】解析器模块&body=Check out this article: http://yoursite.com/2020/07/19/%E3%80%90Mybatis-%E6%BA%90%E7%A0%81%E3%80%91%E8%A7%A3%E6%9E%90%E5%99%A8%E6%A8%A1%E5%9D%97/"><i class="fas fa-envelope " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://getpocket.com/save?url=http://yoursite.com/2020/07/19/%E3%80%90Mybatis-%E6%BA%90%E7%A0%81%E3%80%91%E8%A7%A3%E6%9E%90%E5%99%A8%E6%A8%A1%E5%9D%97/&title=【Mybatis 源码】解析器模块" target="_blank" rel="noopener"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://reddit.com/submit?url=http://yoursite.com/2020/07/19/%E3%80%90Mybatis-%E6%BA%90%E7%A0%81%E3%80%91%E8%A7%A3%E6%9E%90%E5%99%A8%E6%A8%A1%E5%9D%97/&title=【Mybatis 源码】解析器模块" target="_blank" rel="noopener"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://yoursite.com/2020/07/19/%E3%80%90Mybatis-%E6%BA%90%E7%A0%81%E3%80%91%E8%A7%A3%E6%9E%90%E5%99%A8%E6%A8%A1%E5%9D%97/&title=【Mybatis 源码】解析器模块" target="_blank" rel="noopener"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://digg.com/submit?url=http://yoursite.com/2020/07/19/%E3%80%90Mybatis-%E6%BA%90%E7%A0%81%E3%80%91%E8%A7%A3%E6%9E%90%E5%99%A8%E6%A8%A1%E5%9D%97/&title=【Mybatis 源码】解析器模块" target="_blank" rel="noopener"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://yoursite.com/2020/07/19/%E3%80%90Mybatis-%E6%BA%90%E7%A0%81%E3%80%91%E8%A7%A3%E6%9E%90%E5%99%A8%E6%A8%A1%E5%9D%97/&name=【Mybatis 源码】解析器模块&description=" target="_blank" rel="noopener"><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://news.ycombinator.com/submitlink?u=http://yoursite.com/2020/07/19/%E3%80%90Mybatis-%E6%BA%90%E7%A0%81%E3%80%91%E8%A7%A3%E6%9E%90%E5%99%A8%E6%A8%A1%E5%9D%97/&t=【Mybatis 源码】解析器模块" target="_blank" rel="noopener"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
-</ul>
-
-    </div>
-    <div id="toc">
-      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#XML-解析器"><span class="toc-number">1.</span> <span class="toc-text">XML 解析器</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#XPathParser"><span class="toc-number">1.1.</span> <span class="toc-text">XPathParser</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#XMLMapperEntityResolver"><span class="toc-number">1.2.</span> <span class="toc-text">XMLMapperEntityResolver</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#变量占位符解析器"><span class="toc-number">2.</span> <span class="toc-text">变量占位符解析器</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#TokenHandler"><span class="toc-number">2.1.</span> <span class="toc-text">TokenHandler</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#PropertyParser"><span class="toc-number">2.2.</span> <span class="toc-text">PropertyParser</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#GenericTokenParser"><span class="toc-number">2.3.</span> <span class="toc-text">GenericTokenParser</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#VariableTokenHandler"><span class="toc-number">2.4.</span> <span class="toc-text">VariableTokenHandler</span></a></li></ol></li></ol>
-    </div>
-  </span>
-</div>
-
-    
-    <div class="content index py4">
-        
-        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
-  <header>
-    
-    <h1 class="posttitle" itemprop="name headline">
-        【Mybatis 源码】解析器模块
-    </h1>
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/css/bootstrap.min.css" />
 
 
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/github-markdown-css/4.0.0/github-markdown.min.css" />
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
 
-    <div class="meta">
-      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
-        <span itemprop="name">SKP 的博客</span>
-      </span>
-      
-    <div class="postdate">
-      
-        <time datetime="2020-07-18T16:53:00.000Z" itemprop="datePublished">2020-07-19</time>
-        
-      
-    </div>
-
-
-      
-    <div class="article-category">
-        <i class="fas fa-archive"></i>
-        <a class="category-link" href="/categories/MyBatis/">MyBatis</a>
-    </div>
-
-
-      
-    <div class="article-tag">
-        <i class="fas fa-tag"></i>
-        <a class="tag-link" href="/tags/MyBatis/" rel="tag">MyBatis</a>, <a class="tag-link" href="/tags/MyBatis-%E6%BA%90%E7%A0%81/" rel="tag">MyBatis 源码</a>, <a class="tag-link" href="/tags/XPath/" rel="tag">XPath</a>
-    </div>
-
-
-    </div>
-  </header>
+  
+    <link  rel="stylesheet" href="https://cdn.staticfile.org/highlight.js/10.0.0/styles/github-gist.min.css" />
   
 
-  <div class="content" itemprop="articleBody">
-    <p>解析器模块位于 <code>org.apache.ibatis.parsing</code>，主要功能是解析 XML 和 Property。</p>
+  
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_yg9cfy8wd6.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_pjno9b9zyxs.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+  <script  src="/js/utils.js" ></script>
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>SKP</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" data-toggle="modal" data-target="#modalSearch">&nbsp;&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="view intro-2" id="background" parallax=true
+         style="background: url('/img/default.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="container text-center white-text fadeInUp">
+            <span class="h2" id="subtitle">
+              
+            </span>
+
+            
+              
+  <div class="mt-3 post-meta">
+    <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+    <time datetime="2020-07-19 00:53">
+      2020年7月19日 凌晨
+    </time>
+  </div>
+
+
+<div class="mt-1">
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-chart"></i>
+      960 字
+    </span>
+  
+
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-clock-fill"></i>
+      
+      
+      14
+       分钟
+    </span>
+  
+
+  
+  
+</div>
+
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-md">
+      <div class="container nopadding-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <div class="post-content mx-auto" id="post">
+            
+            <article class="markdown-body">
+              <p>解析器模块位于 <code>org.apache.ibatis.parsing</code>，主要功能是解析 XML 和 Property。</p>
 <h2 id="XML-解析器"><a href="#XML-解析器" class="headerlink" title="XML 解析器"></a>XML 解析器</h2><p>相关单元测试可以查看 <code>org.apache.ibatis.parsing.XPathParserTest</code>。</p>
 <h3 id="XPathParser"><a href="#XPathParser" class="headerlink" title="XPathParser"></a>XPathParser</h3><p>对 XPath 进行简单封装。XPath 使用查看参考2。</p>
 <h3 id="XMLMapperEntityResolver"><a href="#XMLMapperEntityResolver" class="headerlink" title="XMLMapperEntityResolver"></a>XMLMapperEntityResolver</h3><p>加载本地的 dtd 文件。</p>
@@ -174,13 +205,121 @@
 <li>org.apache.ibatis.parsing.PropertyParser.default-value-separator 如果启用上述选项，值和默认值用什么符号分隔开，默认是“:”。示例：${key:aaaa}</li>
 </ul>
 <p>查看单元测试类 <code>PropertyParserTest</code>，可以得知 <code>PropertyParser#parse(String string, Properties variables)</code> 为入口，其代码如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// string 包含占位符的文本。</span></span><br><span class="line"><span class="comment">// variables 继承自 HashTable，是一个 Map。</span></span><br><span class="line"><span class="comment">// 返回替换完占位符后的文本</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> String <span class="title">parse</span><span class="params">(String string, Properties variables)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 初始化变量占位符处理器，其处理的占位符主要是 $&#123;key&#125;。</span></span><br><span class="line">  VariableTokenHandler handler = <span class="keyword">new</span> VariableTokenHandler(variables);</span><br><span class="line">  <span class="comment">// 通用的占位符解析器。</span></span><br><span class="line">  <span class="comment">// 主要作用是，找出占位符文本，交给 handler 替换成指定的值。</span></span><br><span class="line">  GenericTokenParser parser = <span class="keyword">new</span> GenericTokenParser(<span class="string">"$&#123;"</span>, <span class="string">"&#125;"</span>, handler);</span><br><span class="line">  <span class="keyword">return</span> parser.parse(string);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="hljs java"><span class="hljs-comment">// string 包含占位符的文本。</span>
+<span class="hljs-comment">// variables 继承自 HashTable，是一个 Map。</span>
+<span class="hljs-comment">// 返回替换完占位符后的文本</span>
+<span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> String <span class="hljs-title">parse</span><span class="hljs-params">(String string, Properties variables)</span> </span>&#123;
+  <span class="hljs-comment">// 初始化变量占位符处理器，其处理的占位符主要是 $&#123;key&#125;。</span>
+  VariableTokenHandler handler = <span class="hljs-keyword">new</span> VariableTokenHandler(variables);
+  <span class="hljs-comment">// 通用的占位符解析器。</span>
+  <span class="hljs-comment">// 主要作用是，找出占位符文本，交给 handler 替换成指定的值。</span>
+  GenericTokenParser parser = <span class="hljs-keyword">new</span> GenericTokenParser(<span class="hljs-string">"$&#123;"</span>, <span class="hljs-string">"&#125;"</span>, handler);
+  <span class="hljs-keyword">return</span> parser.parse(string);
+&#125;</code></pre>
 
 <h3 id="GenericTokenParser"><a href="#GenericTokenParser" class="headerlink" title="GenericTokenParser"></a>GenericTokenParser</h3><p>通用的占位符解析器，依次找出文本中的所有占位符，并调用 <code>TokenHandler</code> 替换占位符。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">GenericTokenParser</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> String openToken;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> String closeToken;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> TokenHandler handler;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 初始化解析器，传入占位符号的开头和结尾，占位符处理器。</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="title">GenericTokenParser</span><span class="params">(String openToken, String closeToken, TokenHandler handler)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.openToken = openToken;</span><br><span class="line">    <span class="keyword">this</span>.closeToken = closeToken;</span><br><span class="line">    <span class="keyword">this</span>.handler = handler;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 核心解析代码</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> String <span class="title">parse</span><span class="params">(String text)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (text == <span class="keyword">null</span> || text.isEmpty()) &#123;</span><br><span class="line">      <span class="keyword">return</span> <span class="string">""</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 寻找占位符开头</span></span><br><span class="line">    <span class="comment">// search open token</span></span><br><span class="line">    <span class="keyword">int</span> start = text.indexOf(openToken);</span><br><span class="line">    <span class="keyword">if</span> (start == -<span class="number">1</span>) &#123;</span><br><span class="line">      <span class="comment">// 不存在占位符号</span></span><br><span class="line">      <span class="keyword">return</span> text;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">char</span>[] src = text.toCharArray();</span><br><span class="line">    <span class="keyword">int</span> offset = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">final</span> StringBuilder builder = <span class="keyword">new</span> StringBuilder();</span><br><span class="line">    StringBuilder expression = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">while</span> (start &gt; -<span class="number">1</span>) &#123;</span><br><span class="line">      <span class="keyword">if</span> (start &gt; <span class="number">0</span> &amp;&amp; src[start - <span class="number">1</span>] == <span class="string">'\\'</span>) &#123;</span><br><span class="line">        <span class="comment">// this open token is escaped. remove the backslash and continue.</span></span><br><span class="line">        builder.append(src, offset, start - offset - <span class="number">1</span>).append(openToken);</span><br><span class="line">        offset = start + openToken.length();</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// found open token. let's search close token.</span></span><br><span class="line">        <span class="keyword">if</span> (expression == <span class="keyword">null</span>) &#123;</span><br><span class="line">          expression = <span class="keyword">new</span> StringBuilder();</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">          expression.setLength(<span class="number">0</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        builder.append(src, offset, start - offset);</span><br><span class="line">        offset = start + openToken.length();</span><br><span class="line">        <span class="keyword">int</span> end = text.indexOf(closeToken, offset);</span><br><span class="line">        <span class="comment">// 寻找占位符结尾</span></span><br><span class="line">        <span class="keyword">while</span> (end &gt; -<span class="number">1</span>) &#123;</span><br><span class="line">          <span class="keyword">if</span> (end &gt; offset &amp;&amp; src[end - <span class="number">1</span>] == <span class="string">'\\'</span>) &#123;</span><br><span class="line">            <span class="comment">// this close token is escaped. remove the backslash and continue.</span></span><br><span class="line">            expression.append(src, offset, end - offset - <span class="number">1</span>).append(closeToken);</span><br><span class="line">            offset = end + closeToken.length();</span><br><span class="line">            end = text.indexOf(closeToken, offset);</span><br><span class="line">          &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            expression.append(src, offset, end - offset);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (end == -<span class="number">1</span>) &#123;</span><br><span class="line">          <span class="comment">// close token was not found.</span></span><br><span class="line">          builder.append(src, start, src.length - start);</span><br><span class="line">          offset = src.length;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">          <span class="comment">// 调用占位符处理器替换文本，占位符处理器替换代码在下面 VariableTokenHandler</span></span><br><span class="line">          builder.append(handler.handleToken(expression.toString()));</span><br><span class="line">          offset = end + closeToken.length();</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="comment">// 寻找下一个占位符开头</span></span><br><span class="line">      start = text.indexOf(openToken, offset);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (offset &lt; src.length) &#123;</span><br><span class="line">      builder.append(src, offset, src.length - offset);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> builder.toString();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">GenericTokenParser</span> </span>&#123;
+
+  <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> String openToken;
+  <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> String closeToken;
+  <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> TokenHandler handler;
+
+  <span class="hljs-comment">// 初始化解析器，传入占位符号的开头和结尾，占位符处理器。</span>
+  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">GenericTokenParser</span><span class="hljs-params">(String openToken, String closeToken, TokenHandler handler)</span> </span>&#123;
+    <span class="hljs-keyword">this</span>.openToken = openToken;
+    <span class="hljs-keyword">this</span>.closeToken = closeToken;
+    <span class="hljs-keyword">this</span>.handler = handler;
+  &#125;
+
+  <span class="hljs-comment">// 核心解析代码</span>
+  <span class="hljs-function"><span class="hljs-keyword">public</span> String <span class="hljs-title">parse</span><span class="hljs-params">(String text)</span> </span>&#123;
+    <span class="hljs-keyword">if</span> (text == <span class="hljs-keyword">null</span> || text.isEmpty()) &#123;
+      <span class="hljs-keyword">return</span> <span class="hljs-string">""</span>;
+    &#125;
+    <span class="hljs-comment">// 寻找占位符开头</span>
+    <span class="hljs-comment">// search open token</span>
+    <span class="hljs-keyword">int</span> start = text.indexOf(openToken);
+    <span class="hljs-keyword">if</span> (start == -<span class="hljs-number">1</span>) &#123;
+      <span class="hljs-comment">// 不存在占位符号</span>
+      <span class="hljs-keyword">return</span> text;
+    &#125;
+    <span class="hljs-keyword">char</span>[] src = text.toCharArray();
+    <span class="hljs-keyword">int</span> offset = <span class="hljs-number">0</span>;
+    <span class="hljs-keyword">final</span> StringBuilder builder = <span class="hljs-keyword">new</span> StringBuilder();
+    StringBuilder expression = <span class="hljs-keyword">null</span>;
+    <span class="hljs-keyword">while</span> (start &gt; -<span class="hljs-number">1</span>) &#123;
+      <span class="hljs-keyword">if</span> (start &gt; <span class="hljs-number">0</span> &amp;&amp; src[start - <span class="hljs-number">1</span>] == <span class="hljs-string">'\\'</span>) &#123;
+        <span class="hljs-comment">// this open token is escaped. remove the backslash and continue.</span>
+        builder.append(src, offset, start - offset - <span class="hljs-number">1</span>).append(openToken);
+        offset = start + openToken.length();
+      &#125; <span class="hljs-keyword">else</span> &#123;
+        <span class="hljs-comment">// found open token. let's search close token.</span>
+        <span class="hljs-keyword">if</span> (expression == <span class="hljs-keyword">null</span>) &#123;
+          expression = <span class="hljs-keyword">new</span> StringBuilder();
+        &#125; <span class="hljs-keyword">else</span> &#123;
+          expression.setLength(<span class="hljs-number">0</span>);
+        &#125;
+        builder.append(src, offset, start - offset);
+        offset = start + openToken.length();
+        <span class="hljs-keyword">int</span> end = text.indexOf(closeToken, offset);
+        <span class="hljs-comment">// 寻找占位符结尾</span>
+        <span class="hljs-keyword">while</span> (end &gt; -<span class="hljs-number">1</span>) &#123;
+          <span class="hljs-keyword">if</span> (end &gt; offset &amp;&amp; src[end - <span class="hljs-number">1</span>] == <span class="hljs-string">'\\'</span>) &#123;
+            <span class="hljs-comment">// this close token is escaped. remove the backslash and continue.</span>
+            expression.append(src, offset, end - offset - <span class="hljs-number">1</span>).append(closeToken);
+            offset = end + closeToken.length();
+            end = text.indexOf(closeToken, offset);
+          &#125; <span class="hljs-keyword">else</span> &#123;
+            expression.append(src, offset, end - offset);
+            <span class="hljs-keyword">break</span>;
+          &#125;
+        &#125;
+        <span class="hljs-keyword">if</span> (end == -<span class="hljs-number">1</span>) &#123;
+          <span class="hljs-comment">// close token was not found.</span>
+          builder.append(src, start, src.length - start);
+          offset = src.length;
+        &#125; <span class="hljs-keyword">else</span> &#123;
+          <span class="hljs-comment">// 调用占位符处理器替换文本，占位符处理器替换代码在下面 VariableTokenHandler</span>
+          builder.append(handler.handleToken(expression.toString()));
+          offset = end + closeToken.length();
+        &#125;
+      &#125;
+      <span class="hljs-comment">// 寻找下一个占位符开头</span>
+      start = text.indexOf(openToken, offset);
+    &#125;
+    <span class="hljs-keyword">if</span> (offset &lt; src.length) &#123;
+      builder.append(src, offset, src.length - offset);
+    &#125;
+    <span class="hljs-keyword">return</span> builder.toString();
+  &#125;
+&#125;</code></pre>
 
 <h3 id="VariableTokenHandler"><a href="#VariableTokenHandler" class="headerlink" title="VariableTokenHandler"></a>VariableTokenHandler</h3><p><code>VariableTokenHandler</code> 为 <code>PropertyParser</code> 的静态内部类，其实现了 <code>TokenHandler</code> 接口，用于替换 <code>${}</code> 包含的占位符。关键代码如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// content 占位符文本。如占位符为 $&#123;key&#125;，那么 content 为 key</span></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> String <span class="title">handleToken</span><span class="params">(String content)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (variables != <span class="keyword">null</span>) &#123;</span><br><span class="line">    String key = content;</span><br><span class="line">    <span class="comment">// 是否使用默认值，由 org.apache.ibatis.parsing.PropertyParser.enable-default-value 控制。</span></span><br><span class="line">    <span class="keyword">if</span> (enableDefaultValue) &#123;</span><br><span class="line">      <span class="comment">// 分隔符，默认“:”，由 org.apache.ibatis.parsing.PropertyParser.default-value-separator 控制。</span></span><br><span class="line">      <span class="keyword">final</span> <span class="keyword">int</span> separatorIndex = content.indexOf(defaultValueSeparator);</span><br><span class="line">      String defaultValue = <span class="keyword">null</span>;</span><br><span class="line">      <span class="keyword">if</span> (separatorIndex &gt;= <span class="number">0</span>) &#123;</span><br><span class="line">        key = content.substring(<span class="number">0</span>, separatorIndex);</span><br><span class="line">        defaultValue = content.substring(separatorIndex + defaultValueSeparator.length());</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">if</span> (defaultValue != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> variables.getProperty(key, defaultValue);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (variables.containsKey(key)) &#123;</span><br><span class="line">      <span class="keyword">return</span> variables.getProperty(key);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 匹配不到值，也没有默认值，则返回原值 $&#123;key&#125;</span></span><br><span class="line">  <span class="keyword">return</span> <span class="string">"$&#123;"</span> + content + <span class="string">"&#125;"</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<pre><code class="hljs java"><span class="hljs-comment">// content 占位符文本。如占位符为 $&#123;key&#125;，那么 content 为 key</span>
+<span class="hljs-meta">@Override</span>
+<span class="hljs-function"><span class="hljs-keyword">public</span> String <span class="hljs-title">handleToken</span><span class="hljs-params">(String content)</span> </span>&#123;
+  <span class="hljs-keyword">if</span> (variables != <span class="hljs-keyword">null</span>) &#123;
+    String key = content;
+    <span class="hljs-comment">// 是否使用默认值，由 org.apache.ibatis.parsing.PropertyParser.enable-default-value 控制。</span>
+    <span class="hljs-keyword">if</span> (enableDefaultValue) &#123;
+      <span class="hljs-comment">// 分隔符，默认“:”，由 org.apache.ibatis.parsing.PropertyParser.default-value-separator 控制。</span>
+      <span class="hljs-keyword">final</span> <span class="hljs-keyword">int</span> separatorIndex = content.indexOf(defaultValueSeparator);
+      String defaultValue = <span class="hljs-keyword">null</span>;
+      <span class="hljs-keyword">if</span> (separatorIndex &gt;= <span class="hljs-number">0</span>) &#123;
+        key = content.substring(<span class="hljs-number">0</span>, separatorIndex);
+        defaultValue = content.substring(separatorIndex + defaultValueSeparator.length());
+      &#125;
+      <span class="hljs-keyword">if</span> (defaultValue != <span class="hljs-keyword">null</span>) &#123;
+        <span class="hljs-keyword">return</span> variables.getProperty(key, defaultValue);
+      &#125;
+    &#125;
+    <span class="hljs-keyword">if</span> (variables.containsKey(key)) &#123;
+      <span class="hljs-keyword">return</span> variables.getProperty(key);
+    &#125;
+  &#125;
+  <span class="hljs-comment">// 匹配不到值，也没有默认值，则返回原值 $&#123;key&#125;</span>
+  <span class="hljs-keyword">return</span> <span class="hljs-string">"$&#123;"</span> + content + <span class="hljs-string">"&#125;"</span>;
+&#125;</code></pre>
 
 <hr>
 <p>参考：</p>
@@ -189,141 +328,264 @@
 <li><a href="https://www.yiibai.com/java_xml/java_xpath_parse_document.html" target="_blank" rel="noopener">Java XPath解析器 - 解析XML文档</a></li>
 </ol>
 
-  </div>
-</article>
+            </article>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/MyBatis/">MyBatis</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/MyBatis/">MyBatis</a>
+                    
+                      <a class="hover-with-bg" href="/tags/MyBatis-%E6%BA%90%E7%A0%81/">MyBatis 源码</a>
+                    
+                      <a class="hover-with-bg" href="/tags/XPath/">XPath</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.zh" target="_blank" rel="nofollow noopener noopener">CC BY-SA 4.0 协议</a> ，转载请注明出处！</p>
+              
+              
+                <div class="post-prevnext row">
+                  <div class="post-prev col-6">
+                    
+                    
+                      <a href="/2020/07/22/%E3%80%90Mybatis-%E6%BA%90%E7%A0%81%E3%80%91%E5%8F%8D%E5%B0%84%E6%A8%A1%E5%9D%97/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">【Mybatis 源码】反射模块</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </div>
+                  <div class="post-next col-6">
+                    
+                    
+                      <a href="/2020/07/18/%E3%80%90Mybatis-%E6%BA%90%E7%A0%81%E3%80%91%E9%A1%B9%E7%9B%AE%E7%BB%93%E6%9E%84%E5%8F%8A%E5%AD%A6%E4%B9%A0%E8%BF%9B%E5%BA%A6/">
+                        <span class="hidden-mobile">【Mybatis 源码】项目结构及学习进度</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </div>
+                </div>
+              
+            </div>
 
-
-
-        
-          <div id="footer-post-container">
-  <div id="footer-post">
-
-    <div id="nav-footer" style="display: none">
-      <ul>
-         
-          <li><a href="/">Home</a></li>
-         
-          <li><a href="/archives/">Writing</a></li>
-         
-          <li><a href="/categories/">categories</a></li>
-         
-          <li><a href="/tags/">tags</a></li>
-         
-          <li><a href="/search/">Search</a></li>
-        
-      </ul>
+            
+          </div>
+        </div>
+      </div>
     </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div id="tocbot"></div>
+</div>
 
-    <div id="toc-footer" style="display: none">
-      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#XML-解析器"><span class="toc-number">1.</span> <span class="toc-text">XML 解析器</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#XPathParser"><span class="toc-number">1.1.</span> <span class="toc-text">XPathParser</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#XMLMapperEntityResolver"><span class="toc-number">1.2.</span> <span class="toc-text">XMLMapperEntityResolver</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#变量占位符解析器"><span class="toc-number">2.</span> <span class="toc-text">变量占位符解析器</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#TokenHandler"><span class="toc-number">2.1.</span> <span class="toc-text">TokenHandler</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#PropertyParser"><span class="toc-number">2.2.</span> <span class="toc-text">PropertyParser</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#GenericTokenParser"><span class="toc-number">2.3.</span> <span class="toc-text">GenericTokenParser</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#VariableTokenHandler"><span class="toc-number">2.4.</span> <span class="toc-text">VariableTokenHandler</span></a></li></ol></li></ol>
-    </div>
-
-    <div id="share-footer" style="display: none">
-      <ul>
-  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=http://yoursite.com/2020/07/19/%E3%80%90Mybatis-%E6%BA%90%E7%A0%81%E3%80%91%E8%A7%A3%E6%9E%90%E5%99%A8%E6%A8%A1%E5%9D%97/" target="_blank" rel="noopener"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://twitter.com/share?url=http://yoursite.com/2020/07/19/%E3%80%90Mybatis-%E6%BA%90%E7%A0%81%E3%80%91%E8%A7%A3%E6%9E%90%E5%99%A8%E6%A8%A1%E5%9D%97/&text=【Mybatis 源码】解析器模块" target="_blank" rel="noopener"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=http://yoursite.com/2020/07/19/%E3%80%90Mybatis-%E6%BA%90%E7%A0%81%E3%80%91%E8%A7%A3%E6%9E%90%E5%99%A8%E6%A8%A1%E5%9D%97/&title=【Mybatis 源码】解析器模块" target="_blank" rel="noopener"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=http://yoursite.com/2020/07/19/%E3%80%90Mybatis-%E6%BA%90%E7%A0%81%E3%80%91%E8%A7%A3%E6%9E%90%E5%99%A8%E6%A8%A1%E5%9D%97/&is_video=false&description=【Mybatis 源码】解析器模块" target="_blank" rel="noopener"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=【Mybatis 源码】解析器模块&body=Check out this article: http://yoursite.com/2020/07/19/%E3%80%90Mybatis-%E6%BA%90%E7%A0%81%E3%80%91%E8%A7%A3%E6%9E%90%E5%99%A8%E6%A8%A1%E5%9D%97/"><i class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://getpocket.com/save?url=http://yoursite.com/2020/07/19/%E3%80%90Mybatis-%E6%BA%90%E7%A0%81%E3%80%91%E8%A7%A3%E6%9E%90%E5%99%A8%E6%A8%A1%E5%9D%97/&title=【Mybatis 源码】解析器模块" target="_blank" rel="noopener"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://reddit.com/submit?url=http://yoursite.com/2020/07/19/%E3%80%90Mybatis-%E6%BA%90%E7%A0%81%E3%80%91%E8%A7%A3%E6%9E%90%E5%99%A8%E6%A8%A1%E5%9D%97/&title=【Mybatis 源码】解析器模块" target="_blank" rel="noopener"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=http://yoursite.com/2020/07/19/%E3%80%90Mybatis-%E6%BA%90%E7%A0%81%E3%80%91%E8%A7%A3%E6%9E%90%E5%99%A8%E6%A8%A1%E5%9D%97/&title=【Mybatis 源码】解析器模块" target="_blank" rel="noopener"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://digg.com/submit?url=http://yoursite.com/2020/07/19/%E3%80%90Mybatis-%E6%BA%90%E7%A0%81%E3%80%91%E8%A7%A3%E6%9E%90%E5%99%A8%E6%A8%A1%E5%9D%97/&title=【Mybatis 源码】解析器模块" target="_blank" rel="noopener"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="http://www.tumblr.com/share/link?url=http://yoursite.com/2020/07/19/%E3%80%90Mybatis-%E6%BA%90%E7%A0%81%E3%80%91%E8%A7%A3%E6%9E%90%E5%99%A8%E6%A8%A1%E5%9D%97/&name=【Mybatis 源码】解析器模块&description=" target="_blank" rel="noopener"><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="https://news.ycombinator.com/submitlink?u=http://yoursite.com/2020/07/19/%E3%80%90Mybatis-%E6%BA%90%E7%A0%81%E3%80%91%E8%A7%A3%E6%9E%90%E5%99%A8%E6%A8%A1%E5%9D%97/&t=【Mybatis 源码】解析器模块" target="_blank" rel="noopener"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
-</ul>
-
-    </div>
-
-    <div id="actions-footer">
-        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
-        <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
-        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
-        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
-    </div>
-
+      </div>
+    
   </div>
 </div>
 
-        
-        <footer id="footer">
-  <div class="footer-left">
-    Copyright &copy;
+<!-- Custom -->
+
+
     
-    
-    2020
-    SKP
+  </main>
+
+  
+    <a id="scroll-top-button" href="#" role="button">
+      <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+    </a>
+  
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
   </div>
-  <div class="footer-right">
-    <nav>
-      <ul>
-         
-          <li><a href="/">Home</a></li>
-         
-          <li><a href="/archives/">Writing</a></li>
-         
-          <li><a href="/categories/">categories</a></li>
-         
-          <li><a href="/tags/">tags</a></li>
-         
-          <li><a href="/search/">Search</a></li>
-        
-      </ul>
-    </nav>
+</div>
+  
+
+  
+
+  
+
+  <footer class="mt-5">
+  <div class="text-center py-3">
+    <div>
+      <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a>
+      <i class="iconfont icon-love"></i>
+      <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener">
+        <span>Fluid</span></a>
+    </div>
+    
+
+    
+
+    
   </div>
 </footer>
 
-    </div>
-    <!-- styles -->
+<!-- SCRIPTS -->
+<script  src="https://cdn.staticfile.org/jquery/3.4.1/jquery.min.js" ></script>
+<script  src="https://cdn.staticfile.org/twitter-bootstrap/4.4.1/js/bootstrap.min.js" ></script>
+<script  src="/js/debouncer.js" ></script>
+<script  src="/js/main.js" ></script>
 
-<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+<!-- Plugins -->
 
-
-<link rel="stylesheet" href="/lib/justified-gallery/css/justifiedGallery.min.css">
-
-
-    <!-- jquery -->
-
-<script src="/lib/jquery/jquery.min.js"></script>
-
-
-<script src="/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
-
-<!-- clipboard -->
 
   
-<script src="/lib/clipboard/clipboard.min.js"></script>
+    <script  src="/js/lazyload.js" ></script>
+  
 
-  <script type="text/javascript">
-  $(function() {
-    // copy-btn HTML
-    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
-    btn += '<i class="far fa-clone"></i>';
-    btn += '</span>'; 
-    // mount it!
-    $(".highlight table").before(btn);
-    var clip = new ClipboardJS('.btn-copy', {
-      text: function(trigger) {
-        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+
+
+  <script defer src="https://cdn.staticfile.org/clipboard.js/2.0.6/clipboard.min.js" ></script>
+  <script  src="/js/clipboard-use.js" ></script>
+
+
+
+
+
+
+
+  <script  src="https://cdn.staticfile.org/tocbot/4.11.1/tocbot.min.js" ></script>
+  <script>
+    $(document).ready(function () {
+      var boardCtn = $('#board-ctn');
+      var boardTop = boardCtn.offset().top;
+
+      tocbot.init({
+        tocSelector: '#tocbot',
+        contentSelector: 'article.markdown-body',
+        headingSelector: 'h1,h2,h3,h4,h5,h6',
+        linkClass: 'tocbot-link',
+        activeLinkClass: 'tocbot-active-link',
+        listClass: 'tocbot-list',
+        isCollapsedClass: 'tocbot-is-collapsed',
+        collapsibleClass: 'tocbot-is-collapsible',
+        collapseDepth: 0,
+        scrollSmooth: true,
+        headingsOffset: -boardTop
+      });
+      if ($('.toc-list-item').length > 0) {
+        $('#toc').css('visibility', 'visible');
       }
     });
-    clip.on('success', function(e) {
-      e.trigger.setAttribute('aria-label', "Copied!");
-      e.clearSelection();
-    })
-  })
   </script>
 
 
-<script src="/js/main.js"></script>
 
-<!-- search -->
+  <script  src="https://cdn.staticfile.org/typed.js/2.0.11/typed.min.js" ></script>
+  <script>
+    var typed = new Typed('#subtitle', {
+      strings: [
+        '  ',
+        "【Mybatis 源码】解析器模块&nbsp;",
+      ],
+      cursorChar: "_",
+      typeSpeed: 70,
+      loop: false,
+    });
+    typed.stop();
+    $(document).ready(function () {
+      $(".typed-cursor").addClass("h2");
+      typed.start();
+    });
+  </script>
 
-<!-- Google Analytics -->
 
-<!-- Baidu Analytics -->
 
-<!-- Disqus Comments -->
+  <script  src="https://cdn.staticfile.org/anchor-js/4.2.2/anchor.min.js" ></script>
+  <script>
+    anchors.options = {
+      placement: "right",
+      visible: "hover",
+      
+    };
+    var el = "h1,h2,h3,h4,h5,h6".split(",");
+    var res = [];
+    for (item of el) {
+      res.push(".markdown-body > " + item)
+    }
+    anchors.add(res.join(", "))
+  </script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+  <script>
+    var path = "/local-search.xml";
+    var inputArea = document.querySelector("#local-search-input");
+    inputArea.onclick = function () {
+      searchFunc(path, 'local-search-input', 'local-search-result');
+      this.onclick = null
+    }
+  </script>
+
+
+
+  <script  src="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.staticfile.org/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <script>
+    $('#post img:not(.no-zoom img, img[no-zoom]), img[zoom]').each(
+      function () {
+        var element = document.createElement('a');
+        $(element).attr('data-fancybox', 'images');
+        $(element).attr('href', $(this).attr('src'));
+        $(this).wrap(element);
+      }
+    );
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 </body>
