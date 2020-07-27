@@ -151,7 +151,7 @@
     
     <span class="post-meta mr-2">
       <i class="iconfont icon-chart"></i>
-      1.3k 字
+      1.9k 字
     </span>
   
 
@@ -161,7 +161,7 @@
       <i class="iconfont icon-clock-fill"></i>
       
       
-      14
+      20
        分钟
     </span>
   
@@ -277,20 +277,21 @@
 <li>订阅：subscribe myTopic，无状态，不保证可达。</li>
 <li>发布：publish myTopic “hello”。</li>
 </ul>
-<h2 id="RDB-持久化"><a href="#RDB-持久化" class="headerlink" title="RDB 持久化"></a>RDB 持久化</h2><ul>
+<h2 id="RDB-持久化"><a href="#RDB-持久化" class="headerlink" title="RDB 持久化"></a>RDB 持久化</h2><p>保存某个时间点的全量数据快照。</p>
+<ul>
 <li><p>redis.conf 相关参数</p>
 <ul>
 <li>save</li>
 <li>stop-writes-on-bgsave-error</li>
-<li>rdbcompression</li>
+<li>rdbcompression - Redis 是 CPU 密集型程序，相比磁盘空间，CPU 更加值钱，建议此选项不开启。</li>
 </ul>
 </li>
 <li><p>触发方式</p>
 <ul>
 <li><p>手动</p>
 <ul>
-<li>save - 阻塞 redis 的服务器进程，直到 rdb 文件创建完毕。</li>
-<li>bgsave - fork 一个子进程来创建 rdb 文件，不阻塞服务器进程。</li>
+<li>save - 阻塞 redis 的服务器进程，直到 RDB 文件创建完毕。</li>
+<li>bgsave - fork 一个子进程来创建 RDB 文件，不阻塞服务器进程。</li>
 </ul>
 </li>
 <li><p>自动</p>
@@ -303,66 +304,120 @@
 </li>
 </ul>
 </li>
+<li><p>lastsave - 上次执行 save 指令的时间</p>
+</li>
 <li><p>bgsave 原理</p>
 <ul>
 <li>fork 子进程和 Copy-on-Write。如果没有更新请求，主进程和子进程共享同一份内存数据。子进程创建 RDB 过程中，如果有更新请求，主进程复制出一份需要更新的数据页的副本并在副本上进行修改。等子进程创建完 RDB 文件后，再用副本替换共享内存数据。</li>
 </ul>
 </li>
+<li><p>Redis 启动时检测到 RDB 文件，会自动载入。</p>
+</li>
 </ul>
-<h2 id="AOF-持久化"><a href="#AOF-持久化" class="headerlink" title="AOF 持久化"></a>AOF 持久化</h2><ul>
-<li>redis.conf 相关参数<ul>
-<li>appendonly</li>
+<h2 id="AOF-持久化"><a href="#AOF-持久化" class="headerlink" title="AOF 持久化"></a>AOF 持久化</h2><p>记录除查询以外的所有的变更数据库状态的指令。指令是以 Redis 协议格式来保存的。</p>
+<ul>
+<li><p>redis.conf 相关参数</p>
+<ul>
+<li>appendonly - 是否开启 AOF</li>
 <li>appendfilename</li>
-<li>appendfsync</li>
+<li>appendfsync - AOF 的写入方式</li>
 </ul>
 </li>
-<li>记录除查询以外的变更数据库状态的指令。</li>
-<li>增量追加</li>
+<li><p>bgrewriteaof - 日志重写解决 AOF 文件不断变大。</p>
+<ul>
+<li>fork 子进程。</li>
+<li>子进程把新的 AOF 写到临时文件，不依赖原来的 AOF。</li>
+<li>主进程持续将新的变动写到内存和原来的 AOF。</li>
+<li>主进程获取到子进程完成 AOF 重写的完成信号，再同步新的增量变动给新的 AOF。</li>
+<li>使用新的 AOF 替换旧的 AOF。</li>
 </ul>
-<pre><code class="hljs vim">TODO 待整理
-AOF持久化 <span class="hljs-keyword">append</span>-<span class="hljs-keyword">only</span>-<span class="hljs-keyword">file</span>
-记录除查询以外的变更数据库状态的指令
-增量追加AOF
-redis.<span class="hljs-keyword">conf</span> appendonly appendfilename appendfsync
-日志重写解决AOF文件不断变大 手动bgrewriteaof 自动。。。
-fork子进程，新AOF文件写到临时文件，不依赖原来的AOF文件。
-主进程将新的变更同时写入到内存和原来的AOF文件。
-主进程获取到子进程重写AOF文件的完成信号，往新AOF文件同步增量变动。
-用新的AOF文件替换旧的AOF文件
-redis数据恢复，重启redis即可。优先AOF恢复，没有则用RDB恢复
-RDB
-全量数据快照，文件小，恢复快
-无法保存最近一次快照之后的数据
-AOF
-可读性高，适合保存增量数据，数据不易丢失
-文件大，恢复慢
-RDB-AOF混合持久化
-
-pipeline主从同步
-pipeline和linux的管道类似
-redis基于请求/响应模型，单个请求处理需要一一应答
-pipeline批量执行指令，节省多次IO往返
-指令如果有依赖关系，需要分批同步pipeline执行
-主从同步原理 （主从、哨兵、集群）
-全同步
-增量同步
-redis哨兵
-流言协议gossip
-
-<span class="hljs-keyword">redi</span>集群 无中心
-一致性哈希算法 环形 对<span class="hljs-number">2</span>^<span class="hljs-number">32</span>取模 保存在顺时针第一台服务器上
-虚拟节点解决数据倾斜
-
-redis 启动时检测到 RDB 文件，会自动载入
-缺点
-数量大，全内存的数据 IO 会影响性能
-创建快照时刻到当前时间的更新是没有保存的</code></pre>
-
+</li>
+<li><p>RDB 和 AOF 共存的情况下，Redis 恢复数据的过程。</p>
+<ul>
+<li>如果存在 AOF，则优先加载 AOF，而忽略 RDB。</li>
+<li>如果不存在 AOF，则加载 RDB。</li>
+<li>如果不存在 RDB，则不加载。</li>
+</ul>
+</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>持久化类型</th>
+<th>优点</th>
+<th>缺点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>RDB</td>
+<td>全量数据快照，文件小，恢复快</td>
+<td>无法保存最近一次快照之后的数据</td>
+</tr>
+<tr>
+<td>AOF</td>
+<td>可读性高，适合保存增量数据，数据不易丢失</td>
+<td>文件体积大，恢复时间长</td>
+</tr>
+</tbody></table>
+<h2 id="RDB-和-AOF-混合持久化模式（4-0）"><a href="#RDB-和-AOF-混合持久化模式（4-0）" class="headerlink" title="RDB 和 AOF 混合持久化模式（4.0）"></a>RDB 和 AOF 混合持久化模式（4.0）</h2><p>TODO 再去了解。</p>
+<h2 id="Pipeline"><a href="#Pipeline" class="headerlink" title="Pipeline"></a>Pipeline</h2><ul>
+<li>Pipeline 和 Linux 的管道类似。</li>
+<li>Redis 基于请求/响应模型，单个请求处理需要一一应答。</li>
+<li>Pipeline 批量执行指令，节省多次 IO 往返的时间。</li>
+<li>有顺序依赖的指令建议分批发送。</li>
+</ul>
+<h2 id="同步机制"><a href="#同步机制" class="headerlink" title="同步机制"></a>同步机制</h2><ul>
+<li><p>全量同步过程</p>
+<ul>
+<li>Slave 发送 sync 命令给 Master</li>
+<li>Master 启动一个后台进程，将 Redis 中的数据快照保存到文件中。</li>
+<li>Master 将保存数据快照期间的接受到的写命令缓存起来。</li>
+<li>Master 完成写文件操作后，将该文件发送给 Slave。</li>
+<li>使用新的 AOF 文件替换旧的 AOF 文件。</li>
+<li>Master 将这期间收集到的增量写命令发送给 Slave。</li>
+</ul>
+</li>
+<li><p>增量同步过程</p>
+<ul>
+<li>Master 接收到用户的操作指令，判断是否需要传播给 Slave（增删改）。</li>
+<li>将操作记录追加到 AOF 文件。</li>
+<li>将操作传播到其他 Slave：1、对齐主从库；2、往响应缓存写入指令。</li>
+<li>将缓存中的数据发送给 Slave。</li>
+</ul>
+</li>
+<li><p>主从同步机制不具备高可用性，Redis Sentinel 应运而生。</p>
+</li>
+</ul>
+<h2 id="Redis-Sentinel"><a href="#Redis-Sentinel" class="headerlink" title="Redis Sentinel"></a>Redis Sentinel</h2><p>解决主从同步 Master 宕机后，主从切换的问题。</p>
+<ul>
+<li>监控：检查主从服务器是否运行正常。</li>
+<li>提醒：通过 API 向管理员或其他应用程序发送故障通知。</li>
+<li>自动故障转移：主从切换。</li>
+<li>Gossip 流言协议。<ul>
+<li>每个节点都随机地和对方通信，最终所有节点的状态达成一致。</li>
+<li>种子节点定期随机向其他节点发送节点列表以及需要传播的消息。</li>
+<li>不保证信息一定会传递给所有的节点，但最终会趋于一致。</li>
+</ul>
+</li>
+</ul>
+<h2 id="Redis-集群"><a href="#Redis-集群" class="headerlink" title="Redis 集群"></a>Redis 集群</h2><ul>
+<li>分片：按某种规则划分数据，分散存储在多个节点上。</li>
+<li>常规哈希划分无法实现节点的动态增减。</li>
+<li>一致性哈希算法：对 2^32 取模，将哈希值空间组织成虚拟的圆环，哈希环。<ul>
+<li>对节点的 IP 进行哈希计算出哈希值，分别在哈希环上定位。</li>
+<li>对数据 key 使用相同的函数 Hash 计算出哈希值。</li>
+<li>根据 key 的哈希值在哈希环的定位，顺时针方向碰到的第一个节点，就是存储数据的节点。</li>
+<li>一致性哈希算法可以很好地解决，动态增减节点，大量的数据迁移的问题。</li>
+</ul>
+</li>
+<li>当节点过少时，哈希环可能出现数据倾斜的问题，可以通过增加虚拟节点来解决该问题。</li>
+</ul>
 <hr>
 <p>参考：</p>
 <ol>
 <li><a href="https://coding.imooc.com/class/303.html#Anchor" target="_blank" rel="noopener">剑指 Java 面试-Offer 直通车</a></li>
 <li><a href="https://juejin.im/post/5dabdb1ee51d45216d7b166a" target="_blank" rel="noopener">彻底搞懂 Redis 的线程模型</a></li>
+<li><a href="https://mp.weixin.qq.com/s/06-4F_iYJBXbtuA69IP7Gw" target="_blank" rel="noopener">图解什么是一致性哈希算法</a></li>
 </ol>
 
             </article>
